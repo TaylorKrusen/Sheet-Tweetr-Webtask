@@ -1,20 +1,21 @@
 module.exports = function(ctx, cb) {
     'use strict';
     const COLUMN_MAP = {
-        tweetTextCID: "replace me with your column id",
-        tweetImageCID: "replace me with your column id",
-        tweetStartCID: "replace me with your column id",
-        tweetEndCID: "replace me with your column id",
-        tweetFreqCID: "replace me with your column id",
-        tweetFreqTypeCID: "replace me with your column id",
-        tweetLastRanCID: "replace me with your column id",
-        tweetTimeCID: "replace me with your column id",
+        tweetTextCID: 12345,//replace with column id for 'Tweet'
+        tweetImageCID: 12345,//replace with column id for 'Image'
+        tweetStartCID: 12345,//replace with column id for 'Start'
+        tweetEndCID: 12345,//replace with column id for 'End'
+        tweetFreqCID: 12345,//replace with column id for 'Frequency'
+        tweetFreqTypeCID: 12345,//replace with column id for 'Frequency Type'
+        tweetLastRanCID: 12345,//replace with column id for 'LastRan'
+        tweetTimeCID: 12345,//replace with column id for 'First Tweet Time'
     };
     const twit = require('twit');
     const smartsheet = require('smartsheet');
     const base64 = require('node-base64-image');
     const request = require('request');
-
+    // Set this variable to reflect your time zone. Ours is PST so we add +7 to GMT.
+    const timezoneDifference = 7;
     const itemsWithValidDates = [];
 
     const smartsheetClient = smartsheet.createClient({
@@ -180,8 +181,8 @@ module.exports = function(ctx, cb) {
         let specificPostTime = new Date(postDate);
         specificPostTime.setHours(specificPostTime.getHours() + hours);
         specificPostTime.setMinutes(specificPostTime.getMinutes() + minutes);
-        // brute forcing the time zone to PST...
-        specificPostTime.setHours(specificPostTime.getHours() + 7);
+        // adjusting the time zone to PST...
+        specificPostTime.setHours(specificPostTime.getHours() + timezoneDifference);
         return specificPostTime;
     }
 
