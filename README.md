@@ -40,7 +40,7 @@ Sheet-Tweetr was written to run in [Auth0's serverless environment called Webtas
 
 ##### General
 
- - Change the `timezoneDifference` variable to reflect your time zone.
+ - Change the `userTimeZone` variable to your local time zone abbreviation.
  - Make a GET request to “https://<i></i>api.smartsheet.com/2.0/sheets/YOUR_SHEET_ID”
  - In the resulting JSON, find the "columns" key. Each object in that array is a column and contains an "id" and "title" property. 
  
