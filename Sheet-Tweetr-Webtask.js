@@ -14,8 +14,9 @@ module.exports = function(ctx, cb) {
     const smartsheet = require('smartsheet');
     const base64 = require('node-base64-image');
     const request = require('request');
-    // Set this variable to reflect your time zone. Ours is PST so we add +7 to GMT.
-    const timezoneDifference = 7;
+    // IMPORTANT: Set your local time zone abbreviations.
+    const userTimeZone = "PST";
+    
     const itemsWithValidDates = [];
 
     const smartsheetClient = smartsheet.createClient({
@@ -173,17 +174,16 @@ module.exports = function(ctx, cb) {
         const midnight = AMPM.toLowerCase() === 'am' && hours === 12;
         const evening = AMPM.toLowerCase() === 'pm' && hours !== 12;
         if (evening) {
-            hours += 12;
+          hours += 12;
         }
         if (midnight) {
-            hours = 0;
+          hours = 0;
         }
-        let specificPostTime = new Date(postDate);
-        specificPostTime.setHours(specificPostTime.getHours() + hours);
-        specificPostTime.setMinutes(specificPostTime.getMinutes() + minutes);
-        // adjusting the time zone to PST...
-        specificPostTime.setHours(specificPostTime.getHours() + timezoneDifference);
-        return specificPostTime;
+        let tweetDate = new Date(postDate);
+        tweetDate.setHours(tweetDate.getHours() + hours);
+        tweetDate.setMinutes(tweetDate.getMinutes() + minutes);
+
+        return new Date(Date.parse(tweetDate + " " + userTimeZone))
     }
 
     function examineCriteria(
@@ -194,28 +194,24 @@ module.exports = function(ctx, cb) {
         freq,
         freqType,
         comparedTo
-    ) {
+        ) {
         // USE CASE 1: date does not fall within given range
-        if (tweetStartDate > comparedTo || tweetEndDate < comparedTo) {
+        if (tweetStartDate >= comparedTo || tweetEndDate <= comparedTo) {
             console.log('Invalid date range');
             return { invalidDate: true };
         }
-        // USE CASE 2: scheduled item is valid, has not gone out yet, and does not have a specific time
-        if (lastRan === undefined && tweetTime === undefined) {
-            return { firstPost: true };
-        }
-        // USE CASE 3: item is valid, has not gone out, and has a specific post time
-        if (lastRan === undefined && tweetTime) {
+        // USE CASE 2: scheduled item has valid dates, but has not been posted yet
+        if (lastRan === undefined) {
             let postTime = specificTime(tweetTime, tweetStartDate).getTime();
             const oneHour = 3.6e6;
             const oneHourBefore = comparedTo - oneHour;
             const oneHourAfter = comparedTo + oneHour;
             if (postTime <= oneHourAfter && postTime >= oneHourBefore) {
                 console.log('close enough...');
-                return { specificPostTime: true };
+                return { firstPost: true };
             }
         }
-        // USE CASE 4: the tweet is valid and should go out again
+        // USE CASE 3: the tweet has valid dates and should go out again
         let nextTweetDate = frequencyCheck(lastRan, freq, freqType);
         if (nextTweetDate.getTime() < comparedTo) {
             return { validPost: true };
@@ -237,7 +233,6 @@ module.exports = function(ctx, cb) {
 
         if (
             isValidItem.firstPost ||
-            isValidItem.specificPostTime ||
             isValidItem.validPost
         ) {
             return true;
@@ -250,7 +245,6 @@ module.exports = function(ctx, cb) {
                 console.log(error);
                 return error;
             }
-
             for (let i = 0; i < data.rows.length; i++) {
                 let row = data.rows[i];
                 let simpleRow = createSimpleRow(row);
@@ -272,7 +266,7 @@ module.exports = function(ctx, cb) {
                     continue;
                 }
             }
-        postTweet(itemsWithValidDates);
+            postTweet(itemsWithValidDates);
         });
     }
 
